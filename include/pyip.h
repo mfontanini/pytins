@@ -4,10 +4,7 @@
 #include <tins/pdu.h>
 #include "pypdu.h"
 
-class PyIP : public PyPDU {
-public:
-    PyIP(Tins::PDU *pdu) 
-    : PyPDU(pdu) { }
-};
+struct ip_tag {};
+typedef generic_pdu<ip_tag> PyIP;
 
 #endif // PYTINS_IP_H

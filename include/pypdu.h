@@ -4,6 +4,7 @@
 #include <boost/mpl/vector.hpp>
 #include <boost/shared_ptr.hpp>
 #include <tins/pdu.h>
+#include <tins/small_uint.h>
 #include <tins/packet.h>
 
 class PyPDU { 
@@ -46,12 +47,23 @@ private:
     Tins::PDU *pdu_;
 };
 
+template<typename T>
+class generic_pdu : public PyPDU {
+public:
+    generic_pdu(Tins::PDU *pdu) 
+    : PyPDU(pdu) { }
+};
+
 /*
  *************************** PyPDU subclasses **************************
  */
 
 #include "pyethernetII.h"
 #include "pyip.h"
+#include "pytcp.h"
+#include "pyudp.h"
+#include "pyicmp.h"
+#include "pyrawpdu.h"
 
 /*
  ***********************************************************************
@@ -63,23 +75,38 @@ PyPDU *PyPDU::from_pdu(Tins::PDU *pdu) {
             return new PyEthernetII(pdu);
         case Tins::PDU::IP:
             return new PyIP(pdu);
+        case Tins::PDU::TCP:
+            return new PyTCP(pdu);
+        case Tins::PDU::UDP:
+            return new PyUDP(pdu);
+        case Tins::PDU::ICMP:
+            return new PyICMP(pdu);
         default:
             return 0;
     };
 }
 
+template<typename T>
+struct type_filter {
+    typedef T type;
+};
+
+template<size_t n>
+struct type_filter<Tins::small_uint<n> > {
+    typedef typename Tins::small_uint<n>::repr_type type;
+};
+
+
 template<typename Result, typename Class>
 struct getter_wrapper {
+    typedef typename type_filter<Result>::type result_type;
     typedef Result (Class::*function_type)() const;
     
     getter_wrapper(function_type function)
     : function(function) { }
 
-    Result operator()(const PyPDU *pdu) const {
-        const Class *cl = dynamic_cast<const Class*>(pdu->pdu());
-        if(!cl)
-            // fixme
-            throw std::runtime_error("invalid cast");
+    result_type operator()(const PyPDU *pdu) const {
+        const Class *cl = static_cast<const Class*>(pdu->pdu());
         return (cl->*function)();
     }
 
@@ -88,16 +115,14 @@ struct getter_wrapper {
 
 template<typename ArgType, typename Class>
 struct setter_wrapper {
+    typedef typename type_filter<ArgType>::type arg_type;
     typedef void (Class::*function_type)(ArgType);
     
     setter_wrapper(function_type function)
     : function(function) { }
 
-    void operator()(PyPDU *pdu, ArgType arg) const {
-        Class *cl = dynamic_cast<Class*>(pdu->pdu());
-        if(!cl)
-            // fixme
-            throw std::runtime_error("invalid cast");
+    void operator()(PyPDU *pdu, arg_type arg) const {
+        Class *cl = static_cast<Class*>(pdu->pdu());
         (cl->*function)(arg);
     }
 
@@ -107,17 +132,24 @@ struct setter_wrapper {
 namespace boost { namespace python { namespace detail {
 
     template <class Result, typename Class>
-    inline boost::mpl::vector<Result, const PyPDU*>
+    inline boost::mpl::vector<typename getter_wrapper<Result, Class>::result_type, const PyPDU*>
     get_signature(getter_wrapper<Result, Class>, const PyPDU* = 0)
     {
-        return boost::mpl::vector<Result, const PyPDU*>();
+        return boost::mpl::vector<
+            typename getter_wrapper<Result, Class>::result_type, 
+            const PyPDU*
+        >();
     }
     
     template <class ArgType, typename Class>
-    inline boost::mpl::vector<void, PyPDU*, ArgType>
+    inline boost::mpl::vector<void, PyPDU*, typename setter_wrapper<ArgType, Class>::arg_type>
     get_signature(setter_wrapper<ArgType, Class>, PyPDU* = 0)
     {
-        return boost::mpl::vector<void, PyPDU*, ArgType>();
+        return boost::mpl::vector<
+            void, 
+            PyPDU*, 
+            typename setter_wrapper<ArgType, Class>::arg_type
+        >();
     }
 
 } } }

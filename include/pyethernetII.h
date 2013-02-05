@@ -4,10 +4,7 @@
 #include <tins/pdu.h>
 #include "pypdu.h"
 
-class PyEthernetII : public PyPDU {
-public:
-    PyEthernetII(Tins::PDU *pdu) 
-    : PyPDU(pdu) { }
-};
+struct eth2_tag {};
+typedef generic_pdu<eth2_tag> PyEthernetII;
 
 #endif // PYTINS_ETHERNETII_H
