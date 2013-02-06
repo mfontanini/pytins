@@ -1,6 +1,6 @@
 CXX=g++
 CP=cp
-CXXFLAGS= -fPIC -shared -c -Wall
+CXXFLAGS= -fPIC -shared -c -Wall -g
 INCLUDE = -Iinclude -I/usr/include/python2.7/
 LDFLAGS= -lboost_python -ltins -lpython2.7 -shared
 RM=rm

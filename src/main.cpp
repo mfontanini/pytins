@@ -1,73 +1,70 @@
+/*
+ * Copyright (c) 2012, Matias Fontanini
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ * 
+ * * Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above
+ *   copyright notice, this list of conditions and the following disclaimer
+ *   in the documentation and/or other materials provided with the
+ *   distribution.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ */
+
 #include <boost/shared_ptr.hpp>
 #include <tins/hw_address.h>
 #include <tins/tins.h>
 #include <string>
+#include "pysniffer.h"
 #include "pypdu.h" // MUST GO HERE
 #include <boost/python.hpp>
 #include <boost/python/def.hpp>
 #include <boost/python/suite/indexing/vector_indexing_suite.hpp>
 #include <boost/python/implicit.hpp>
 #include <boost/function.hpp>
+#include "pyethernetII.h"
+#include "pyip.h"
+#include "pytcp.h"
+#include "pyudp.h"
+#include "pyicmp.h"
+#include "pyrawpdu.h"
+#include "pysender.h"
 
 using namespace boost::python;
 
-struct callback_proxy {
-    PyObject* obj;
-    
-    callback_proxy(PyObject* obj) : obj(obj) { }
-    
-    bool operator()(Tins::RefPacket &pck) {
-        PyPacket packet(pck.pdu());
-        return call<bool>(obj, packet);
-    }
-};
-class PySniffer : public Tins::Sniffer {
-public:
-    PySniffer(const std::string &device, unsigned max_packet_size,
-      bool promisc = false, const std::string &filter = "")
-    : Tins::Sniffer(device, max_packet_size, promisc, filter) {}
-    
-    PyPacket wrapped_next_packet() {
-        return next_packet();
-    }
-    
-    void wrapped_sniff_loop(PyObject* callback_obj, size_t max_packets = 0)
-    {
-        callback_proxy handler(callback_obj);
-        sniff_loop(handler, max_packets);
-    }
-};
-
-class PyFileSniffer : public Tins::FileSniffer {
-public:
-    PyFileSniffer(const std::string &file_name, const std::string &filter = "")
-    : Tins::FileSniffer(file_name, filter) {}
-    
-        PyPacket wrapped_next_packet() {
-        return next_packet();
-    }
-    
-    void wrapped_sniff_loop(PyObject* callback_obj, size_t max_packets = 0)
-    {
-        callback_proxy handler(callback_obj);
-        sniff_loop(handler, max_packets);
-    }
-};
-
-BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(SnifferSniffLoopOverloads, wrapped_sniff_loop, 1, 2)
-
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(SnifferSniffLoopOverloads, sniff_loop, 1, 2)
 
 BOOST_PYTHON_MODULE(tins)
 {
     using namespace Tins;
     
-    export_pypdu();
+    PyPDU::python_register();
+    PyEthernetII::python_register();
     
-    class_<PyEthernetII, bases<PyPDU> >("EthernetII", no_init)
+    // ****************************************************************
+    // ***************************** PDUs *****************************
+    // ****************************************************************
+    /*class_<PyEthernetII, bases<PyPDU> >("EthernetII", no_init)
         PYTINS_MAKE_ATTR(uint16_t, EthernetII, payload_type)
         PYTINS_MAKE_ATTR2(EthernetII::address_type, const EthernetII::address_type&, EthernetII, src_addr)
         PYTINS_MAKE_ATTR2(EthernetII::address_type, const EthernetII::address_type&, EthernetII, dst_addr)
-    ;
+    ;*/
     
     class_<PyIP, bases<PyPDU> >("IP", no_init)
         PYTINS_MAKE_ATTR(IP::address_type, IP, src_addr)
@@ -129,6 +126,14 @@ BOOST_PYTHON_MODULE(tins)
         .def("__repr__", &PyRawPDU::repr)
     ;
     
+    // ****************************************************************
+    // ************************* Other stuff **************************
+    // ****************************************************************
+    
+    class_<PyPacketSender>("PacketSender", init<>())
+        .def("send", &PyPacketSender::send)
+    ;
+    
     class_<PyPacket>("Packet", no_init)
         .def("pdu", &PyPacket::pdu, return_internal_reference<1>())
     ;
@@ -148,13 +153,13 @@ BOOST_PYTHON_MODULE(tins)
     ;
     
     class_<PySniffer, boost::noncopyable>("Sniffer", init<std::string, unsigned, optional<bool, std::string> >())
-        .def("next_packet", &PySniffer::wrapped_next_packet)
-        .def("sniff_loop", &PySniffer::wrapped_sniff_loop, SnifferSniffLoopOverloads())
+        .def("next_packet", &PySniffer::next_packet)
+        .def("sniff_loop", &PySniffer::sniff_loop, SnifferSniffLoopOverloads())
     ;
     
     class_<PyFileSniffer, boost::noncopyable>("FileSniffer", init<std::string, optional<std::string> >())
-        .def("next_packet", &PyFileSniffer::wrapped_next_packet)
-        .def("sniff_loop", &PyFileSniffer::wrapped_sniff_loop, SnifferSniffLoopOverloads())
+        .def("next_packet", &PyFileSniffer::next_packet)
+        .def("sniff_loop", &PyFileSniffer::sniff_loop, SnifferSniffLoopOverloads())
     ;
     
     implicitly_convertible<std::string, HWAddress<6> >();

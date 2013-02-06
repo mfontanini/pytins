@@ -27,43 +27,35 @@
  *
  */
 
-#ifndef PYTINS_RAWPDU_H
-#define PYTINS_RAWPDU_H
+#ifndef PYTINS_SNIFFER_H
+#define PYTINS_SNIFFER_H
 
-#include <string>
-#include <tins/pdu.h>
-#include <tins/rawpdu.h>
-#include "pypdu.h"
-#include "utils.h"
+#include <boost/python/object.hpp>
+#include <tins/sniffer.h>
 
-class PyRawPDU : public PyPDU {
+class PyPacket;
+
+class PySniffer {
 public:
-    typedef Tins::RawPDU::payload_type::iterator iterator;
-
-    PyRawPDU(Tins::PDU *pdu) 
-    : PyPDU(pdu) { }
+    PySniffer(const std::string &device, unsigned max_packet_size,
+      bool promisc = false, const std::string &filter = "");
     
-    PyRawPDU(const std::string &str)
-    : PyPDU(new Tins::RawPDU(str)) {}
+    PyPacket next_packet();
     
-    iterator begin() {
-        return static_cast<Tins::RawPDU*>(pdu())->payload().begin();
-    }
-
-    iterator end() {
-        return static_cast<Tins::RawPDU*>(pdu())->payload().end();
-    }
-    
-    std::string to_string() {
-        return std::string(
-            (const char *)&begin()[0], 
-            (const char *)&end()[0]
-        );
-    }
-    
-    std::string repr() {
-        return "Raw(" + PyUtils::string_repr(to_string()) + ")";
-    }
+    void sniff_loop(PyObject* callback_obj, size_t max_packets = 0);
+private:
+    Tins::Sniffer sniffer;
 };
 
-#endif // PYTINS_RAWPDU_H
+class PyFileSniffer {
+public:
+    PyFileSniffer(const std::string &file_name, const std::string &filter = "");
+    
+    PyPacket next_packet();
+    
+    void sniff_loop(PyObject* callback_obj, size_t max_packets = 0);
+private:
+    Tins::FileSniffer sniffer;
+};
+
+#endif // PYTINS_SNIFFER_H

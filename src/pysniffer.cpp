@@ -27,43 +27,52 @@
  *
  */
 
-#ifndef PYTINS_RAWPDU_H
-#define PYTINS_RAWPDU_H
-
-#include <string>
-#include <tins/pdu.h>
-#include <tins/rawpdu.h>
+#include <boost/python/call.hpp>
+#include "pysniffer.h"
 #include "pypdu.h"
-#include "utils.h"
 
-class PyRawPDU : public PyPDU {
-public:
-    typedef Tins::RawPDU::payload_type::iterator iterator;
+using namespace boost::python;
 
-    PyRawPDU(Tins::PDU *pdu) 
-    : PyPDU(pdu) { }
+struct callback_proxy {
+    PyObject* obj;
     
-    PyRawPDU(const std::string &str)
-    : PyPDU(new Tins::RawPDU(str)) {}
+    callback_proxy(PyObject* obj) : obj(obj) { }
     
-    iterator begin() {
-        return static_cast<Tins::RawPDU*>(pdu())->payload().begin();
-    }
-
-    iterator end() {
-        return static_cast<Tins::RawPDU*>(pdu())->payload().end();
-    }
-    
-    std::string to_string() {
-        return std::string(
-            (const char *)&begin()[0], 
-            (const char *)&end()[0]
-        );
-    }
-    
-    std::string repr() {
-        return "Raw(" + PyUtils::string_repr(to_string()) + ")";
+    bool operator()(Tins::RefPacket &pck) {
+        PyPacket packet(pck.pdu());
+        return call<bool>(obj, packet);
     }
 };
 
-#endif // PYTINS_RAWPDU_H
+PySniffer::PySniffer(const std::string &device, unsigned max_packet_size,
+  bool promisc, const std::string &filter)
+: sniffer(device, max_packet_size, promisc, filter) 
+{
+    
+}
+    
+PyPacket PySniffer::next_packet() {
+    return sniffer.next_packet();
+}
+    
+void PySniffer::sniff_loop(PyObject* callback_obj, size_t max_packets)
+{
+    callback_proxy handler(callback_obj);
+    sniffer.sniff_loop(handler, max_packets);
+}
+
+PyFileSniffer::PyFileSniffer(const std::string &file_name, const std::string &filter)
+: sniffer(file_name, filter) 
+{
+    
+}
+    
+PyPacket PyFileSniffer::next_packet() {
+    return sniffer.next_packet();
+}
+
+void PyFileSniffer::sniff_loop(PyObject* callback_obj, size_t max_packets)
+{
+    callback_proxy handler(callback_obj);
+    sniffer.sniff_loop(handler, max_packets);
+}

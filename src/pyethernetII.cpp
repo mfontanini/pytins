@@ -27,43 +27,30 @@
  *
  */
 
-#ifndef PYTINS_RAWPDU_H
-#define PYTINS_RAWPDU_H
+#include <tins/hw_address.h>
+#include "pyethernetII.h"
 
-#include <string>
-#include <tins/pdu.h>
-#include <tins/rawpdu.h>
-#include "pypdu.h"
-#include "utils.h"
+using Tins::EthernetII;
+using namespace boost::python;
 
-class PyRawPDU : public PyPDU {
-public:
-    typedef Tins::RawPDU::payload_type::iterator iterator;
-
-    PyRawPDU(Tins::PDU *pdu) 
-    : PyPDU(pdu) { }
+PyEthernetII::PyEthernetII(const std::string &iface, const address_type &src_addr,
+  const address_type &dst_addr) 
+: PyPDU(new EthernetII(iface, src_addr, dst_addr)) 
+{
     
-    PyRawPDU(const std::string &str)
-    : PyPDU(new Tins::RawPDU(str)) {}
-    
-    iterator begin() {
-        return static_cast<Tins::RawPDU*>(pdu())->payload().begin();
-    }
+}
 
-    iterator end() {
-        return static_cast<Tins::RawPDU*>(pdu())->payload().end();
-    }
+PyEthernetII::PyEthernetII(Tins::PDU *pdu) 
+: PyPDU(pdu) 
+{ 
     
-    std::string to_string() {
-        return std::string(
-            (const char *)&begin()[0], 
-            (const char *)&end()[0]
-        );
-    }
-    
-    std::string repr() {
-        return "Raw(" + PyUtils::string_repr(to_string()) + ")";
-    }
-};
+}
 
-#endif // PYTINS_RAWPDU_H
+void PyEthernetII::python_register() {
+    class_<PyEthernetII, bases<PyPDU> >("EthernetII")
+        .def(init<optional<std::string, address_type, address_type> >())
+        PYTINS_MAKE_ATTR(uint16_t, EthernetII, payload_type)
+        PYTINS_MAKE_ATTR2(EthernetII::address_type, const EthernetII::address_type&, EthernetII, src_addr)
+        PYTINS_MAKE_ATTR2(EthernetII::address_type, const EthernetII::address_type&, EthernetII, dst_addr)
+    ;
+}

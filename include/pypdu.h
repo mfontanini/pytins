@@ -1,3 +1,32 @@
+/*
+ * Copyright (c) 2012, Matias Fontanini
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ * 
+ * * Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above
+ *   copyright notice, this list of conditions and the following disclaimer
+ *   in the documentation and/or other materials provided with the
+ *   distribution.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ */
+
 #ifndef PYTINS_PYPDU_H
 #define PYTINS_PYPDU_H
 
@@ -10,41 +39,34 @@
 class PyPDU { 
 public:
     static PyPDU *from_pdu(Tins::PDU *pdu);
+    static void python_register();
 
-    PyPDU(Tins::PDU *pdu_ptr) : pdu_(pdu_ptr) { }
+    PyPDU(Tins::PDU *pdu_ptr);
     
-    virtual ~PyPDU() {}
+    PyPDU() {}
+    
+    virtual ~PyPDU();
 
-    uint32_t header_size() const {
-        return pdu()->header_size();
-    }
+    uint32_t header_size() const;
     
-    Tins::PDU* clone() const {
-        return pdu()->clone();
-    }
+    Tins::PDU* clone() const;
     
-    Tins::PDU::PDUType pdu_type() const {
-        return pdu()->pdu_type();
-    }
+    Tins::PDU::PDUType pdu_type() const;
     
-    Tins::PDU::serialization_type serialize() {
-        return pdu()->serialize();
-    }
+    Tins::PDU::serialization_type serialize();
     
-    const Tins::PDU *pdu() const {
-        return pdu_;
-    }
+    const Tins::PDU *pdu() const;
     
-    Tins::PDU *pdu() {
-        return pdu_;
-    }
+    Tins::PDU *pdu();
     
-    PyPDU *inner_pdu() {
-        return PyPDU::from_pdu(pdu_->inner_pdu());
-    }
+    PyPDU *inner_pdu();
     
+    PyPDU operator/(const PyPDU &rhs);
+    PyPDU &operator/=(const PyPDU &rhs);
+protected:
+    void set_pdu(Tins::PDU *apdu);
 private:
-    Tins::PDU *pdu_;
+    boost::shared_ptr<Tins::PDU> pdu_;
 };
 
 template<typename T>
@@ -53,38 +75,6 @@ public:
     generic_pdu(Tins::PDU *pdu) 
     : PyPDU(pdu) { }
 };
-
-/*
- *************************** PyPDU subclasses **************************
- */
-
-#include "pyethernetII.h"
-#include "pyip.h"
-#include "pytcp.h"
-#include "pyudp.h"
-#include "pyicmp.h"
-#include "pyrawpdu.h"
-
-/*
- ***********************************************************************
- */
-
-PyPDU *PyPDU::from_pdu(Tins::PDU *pdu) {
-    switch(pdu->pdu_type()) {
-        case Tins::PDU::ETHERNET_II:
-            return new PyEthernetII(pdu);
-        case Tins::PDU::IP:
-            return new PyIP(pdu);
-        case Tins::PDU::TCP:
-            return new PyTCP(pdu);
-        case Tins::PDU::UDP:
-            return new PyUDP(pdu);
-        case Tins::PDU::ICMP:
-            return new PyICMP(pdu);
-        default:
-            return 0;
-    };
-}
 
 template<typename T>
 struct type_filter {
@@ -197,15 +187,5 @@ private:
 
 #define PYTINS_MAKE_ATTR2(GETTER_TYPE, SETTER_TYPE, CLASS, NAME) \
     .add_property(#NAME, PYTINS_GETTER_FUN(GETTER_TYPE, CLASS, NAME), PYTINS_SETTER_FUN(SETTER_TYPE, CLASS, NAME))
-
-inline void export_pypdu()
-{
-    using namespace boost::python;
-    
-    class_<PyPDU>("PDU", no_init)
-        .def("serialize", &PyPDU::serialize)
-        .def("inner_pdu", &PyPDU::inner_pdu, return_value_policy<manage_new_object>())
-    ;
-}
 
 #endif // PYTINS_PYPDU_H
