@@ -26,25 +26,30 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+ 
+#include <tins/udp.h>
+#include "pyudp.h"
 
-#ifndef PYTINS_IP_H
-#define PYTINS_IP_H
-
-#include <tins/ip.h>
-#include <tins/pdu.h>
-#include "pypdu.h"
-
-
-class PyIP : public PyPDU {
-public:
-    typedef Tins::IP::address_type address_type;
-
-    static void python_register();
+using Tins::UDP;
     
-    PyIP(const address_type &dst_addr = address_type(),
-      const address_type &src_addr = address_type());
+PyUDP::PyUDP(uint16_t dport, uint16_t sport) 
+: PyPDU(new UDP(dport, sport))
+{
     
-    PyIP(Tins::PDU *pdu);
-};
+}
 
-#endif // PYTINS_IP_H
+PyUDP::PyUDP(Tins::PDU *pdu) 
+: PyPDU(pdu)
+{
+    
+}
+
+void PyUDP::python_register() {
+    using namespace boost::python;
+    
+    class_<PyUDP, bases<PyPDU> >("UDP", init<optional<uint16_t, uint16_t> >())
+        PYTINS_MAKE_ATTR(uint16_t, UDP, sport)
+        PYTINS_MAKE_ATTR(uint16_t, UDP, dport)
+        PYTINS_MAKE_ATTR(uint16_t, UDP, length)
+    ;
+}

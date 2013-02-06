@@ -27,24 +27,11 @@
  *
  */
 
-#ifndef PYTINS_IP_H
-#define PYTINS_IP_H
+#ifndef PYTINS_HELPERS_H
+#define PYTINS_HELPERS_H
 
-#include <tins/ip.h>
-#include <tins/pdu.h>
-#include "pypdu.h"
+namespace PyHelpers {
+    void python_register();
+}
 
-
-class PyIP : public PyPDU {
-public:
-    typedef Tins::IP::address_type address_type;
-
-    static void python_register();
-    
-    PyIP(const address_type &dst_addr = address_type(),
-      const address_type &src_addr = address_type());
-    
-    PyIP(Tins::PDU *pdu);
-};
-
-#endif // PYTINS_IP_H
+#endif // PYTINS_HELPERS_H

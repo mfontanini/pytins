@@ -34,6 +34,7 @@
 #include "pyicmp.h"
 #include "pyrawpdu.h"
 #include "pypdu.h"
+#include "pyarp.h"
 
 PyPDU::PyPDU(Tins::PDU *pdu_ptr) : pdu_(pdu_ptr) { }
 
@@ -83,6 +84,10 @@ PyPDU *PyPDU::from_pdu(Tins::PDU *pdu) {
             return new PyUDP(pdu);
         case Tins::PDU::ICMP:
             return new PyICMP(pdu);
+        case Tins::PDU::ARP:
+            return new PyARP(pdu);
+        case Tins::PDU::RAW:
+            return new PyRawPDU(pdu);
         default:
             return 0;
     };
@@ -109,5 +114,6 @@ void PyPDU::python_register()
         .def("serialize", &PyPDU::serialize)
         .def("inner_pdu", &PyPDU::inner_pdu, return_value_policy<manage_new_object>())
         .def(self /= other<PyPDU>())
+        .def(self / other<PyPDU>())
     ;
 }

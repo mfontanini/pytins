@@ -27,24 +27,25 @@
  *
  */
 
-#ifndef PYTINS_IP_H
-#define PYTINS_IP_H
+#ifndef PYTINS_ARP_H
+#define PYTINS_ARP_H
 
-#include <tins/ip.h>
-#include <tins/pdu.h>
+#include <tins/arp.h>
 #include "pypdu.h"
 
-
-class PyIP : public PyPDU {
+class PyARP : public PyPDU {
 public:
-    typedef Tins::IP::address_type address_type;
-
+    typedef Tins::ARP::hwaddress_type hwaddress_type;
+    typedef Tins::ARP::ipaddress_type ipaddress_type;
+    
     static void python_register();
     
-    PyIP(const address_type &dst_addr = address_type(),
-      const address_type &src_addr = address_type());
+    PyARP(ipaddress_type target_ip = ipaddress_type(), 
+      ipaddress_type sender_ip = ipaddress_type(), 
+      const hwaddress_type &target_hw = hwaddress_type(), 
+      const hwaddress_type &sender_hw = hwaddress_type());
     
-    PyIP(Tins::PDU *pdu);
+    PyARP(Tins::PDU *pdu);
 };
 
-#endif // PYTINS_IP_H
+#endif // PYTINS_ARP_H

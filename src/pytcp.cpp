@@ -27,24 +27,33 @@
  *
  */
 
-#ifndef PYTINS_IP_H
-#define PYTINS_IP_H
+#include <tins/tcp.h>
+#include "pytcp.h"
 
-#include <tins/ip.h>
-#include <tins/pdu.h>
-#include "pypdu.h"
-
-
-class PyIP : public PyPDU {
-public:
-    typedef Tins::IP::address_type address_type;
-
-    static void python_register();
+using Tins::TCP;
     
-    PyIP(const address_type &dst_addr = address_type(),
-      const address_type &src_addr = address_type());
+PyTCP::PyTCP(uint16_t dport, uint16_t sport) 
+: PyPDU(new TCP(dport, sport))
+{
     
-    PyIP(Tins::PDU *pdu);
-};
+}
 
-#endif // PYTINS_IP_H
+PyTCP::PyTCP(Tins::PDU *pdu) 
+: PyPDU(pdu)
+{
+    
+}
+
+void PyTCP::python_register() {
+    using namespace boost::python;
+    
+    class_<PyTCP, bases<PyPDU> >("TCP", init<optional<uint16_t, uint16_t> >())
+        PYTINS_MAKE_ATTR(uint16_t, TCP, sport)
+        PYTINS_MAKE_ATTR(uint16_t, TCP, dport)
+        PYTINS_MAKE_ATTR(uint32_t, TCP, seq)
+        PYTINS_MAKE_ATTR(uint32_t, TCP, ack_seq)
+        PYTINS_MAKE_ATTR(uint16_t, TCP, window)
+        PYTINS_MAKE_ATTR(uint16_t, TCP, check)
+        PYTINS_MAKE_ATTR(uint16_t, TCP, urg_ptr)
+    ;
+}

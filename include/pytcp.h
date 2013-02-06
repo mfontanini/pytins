@@ -33,7 +33,13 @@
 #include <tins/pdu.h>
 #include "pypdu.h"
 
-struct tcp_tag {};
-typedef generic_pdu<tcp_tag> PyTCP;
+class PyTCP : public PyPDU {
+public:
+    static void python_register();
+    
+    PyTCP(uint16_t dport = 0, uint16_t sport = 0);
+    
+    PyTCP(Tins::PDU *pdu);
+};
 
 #endif // PYTINS_TCP_H

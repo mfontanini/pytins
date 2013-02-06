@@ -26,25 +26,47 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+ 
+#include "pyicmp.h"
 
-#ifndef PYTINS_IP_H
-#define PYTINS_IP_H
+using Tins::ICMP;
 
-#include <tins/ip.h>
-#include <tins/pdu.h>
-#include "pypdu.h"
-
-
-class PyIP : public PyPDU {
-public:
-    typedef Tins::IP::address_type address_type;
-
-    static void python_register();
+PyICMP::PyICMP(ICMP::Flags flag) 
+: PyPDU(new ICMP(flag))
+{
     
-    PyIP(const address_type &dst_addr = address_type(),
-      const address_type &src_addr = address_type());
-    
-    PyIP(Tins::PDU *pdu);
-};
+}
 
-#endif // PYTINS_IP_H
+PyICMP::PyICMP(Tins::PDU *pdu) 
+: PyPDU(pdu)
+{
+    
+}
+
+void PyICMP::python_register() {
+    using namespace boost::python;
+    
+    class_<PyICMP, bases<PyPDU> >("ICMP", init<optional<ICMP::Flags> >())
+        PYTINS_MAKE_ATTR(uint8_t, ICMP, code)
+        PYTINS_MAKE_ATTR(uint16_t, ICMP, check)
+        PYTINS_MAKE_ATTR(uint16_t, ICMP, id)
+        PYTINS_MAKE_ATTR(uint16_t, ICMP, mtu)
+        PYTINS_MAKE_ATTR(uint8_t, ICMP, pointer)
+        PYTINS_MAKE_ATTR(uint16_t, ICMP, check)
+        PYTINS_MAKE_ATTR(uint16_t, ICMP, sequence)
+        PYTINS_MAKE_ATTR(uint32_t, ICMP, gateway)
+        PYTINS_MAKE_ATTR(ICMP::Flags, ICMP, type)
+    ;
+    
+    enum_<ICMP::Flags>("ICMPFlags")
+        .value("ECHO_REPLY", ICMP::ECHO_REPLY)
+        .value("DEST_UNREACHABLE", ICMP::DEST_UNREACHABLE)
+        .value("SOURCE_QUENCH", ICMP::SOURCE_QUENCH)
+        .value("REDIRECT", ICMP::REDIRECT)
+        .value("ECHO_REQUEST", ICMP::ECHO_REQUEST)
+        .value("TIME_EXCEEDED", ICMP::TIME_EXCEEDED)
+        .value("PARAM_PROBLEM", ICMP::PARAM_PROBLEM)
+        .value("INFO_REQUEST", ICMP::INFO_REQUEST)
+        .value("INFO_REPLY", ICMP::INFO_REPLY)
+    ;
+}

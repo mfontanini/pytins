@@ -31,10 +31,10 @@
 #include "pyethernetII.h"
 
 using Tins::EthernetII;
-using namespace boost::python;
+using Tins::NetworkInterface;
 
-PyEthernetII::PyEthernetII(const std::string &iface, const address_type &src_addr,
-  const address_type &dst_addr) 
+PyEthernetII::PyEthernetII(const NetworkInterface &iface, 
+  const address_type &src_addr, const address_type &dst_addr) 
 : PyPDU(new EthernetII(iface, src_addr, dst_addr)) 
 {
     
@@ -47,9 +47,12 @@ PyEthernetII::PyEthernetII(Tins::PDU *pdu)
 }
 
 void PyEthernetII::python_register() {
+    using namespace boost::python;
+    
     class_<PyEthernetII, bases<PyPDU> >("EthernetII")
-        .def(init<optional<std::string, address_type, address_type> >())
+        .def(init<optional<NetworkInterface, address_type, address_type> >())
         PYTINS_MAKE_ATTR(uint16_t, EthernetII, payload_type)
+        PYTINS_MAKE_ATTR_POLICY(const NetworkInterface&, EthernetII, iface, return_internal_reference<1>())
         PYTINS_MAKE_ATTR2(EthernetII::address_type, const EthernetII::address_type&, EthernetII, src_addr)
         PYTINS_MAKE_ATTR2(EthernetII::address_type, const EthernetII::address_type&, EthernetII, dst_addr)
     ;

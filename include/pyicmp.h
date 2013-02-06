@@ -30,10 +30,16 @@
 #ifndef PYTINS_ICMP_H
 #define PYTINS_ICMP_H
 
-#include <tins/pdu.h>
+#include <tins/icmp.h>
 #include "pypdu.h"
 
-struct icmp_tag {};
-typedef generic_pdu<icmp_tag> PyICMP;
+class PyICMP : public PyPDU {
+public:
+    static void python_register();
+    
+    PyICMP(Tins::ICMP::Flags flag = Tins::ICMP::ECHO_REQUEST);
+    
+    PyICMP(Tins::PDU *pdu);
+};
 
 #endif // PYTINS_ICMP_H

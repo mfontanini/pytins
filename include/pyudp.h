@@ -33,7 +33,13 @@
 #include <tins/pdu.h>
 #include "pypdu.h"
 
-struct udp_tag {};
-typedef generic_pdu<udp_tag> PyUDP;
+class PyUDP : public PyPDU {
+public:
+    static void python_register();
+    
+    PyUDP(uint16_t dport = 0, uint16_t sport = 0);
+    
+    PyUDP(Tins::PDU *pdu);
+};
 
 #endif // PYTINS_UDP_H

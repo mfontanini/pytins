@@ -31,12 +31,24 @@
 #define PYTINS_SENDER_H
 
 #include <tins/packet_sender.h>
+#include <tins/network_interface.h>
 #include "pypdu.h"
 
 class PyPacketSender {
 public:
+    static void python_register();
+
     void send(PyPDU *pdu);
+    void isend(const Tins::NetworkInterface &iface, PyPDU *pdu);
 private:
+    template<typename T>
+    void swap_iface_and_send(const Tins::NetworkInterface &iface, T *pdu, PyPDU *pypdu) {
+        Tins::NetworkInterface prev_iface = pdu->iface();
+        pdu->iface(iface);
+        send(pypdu);
+        pdu->iface(prev_iface);
+    }
+
     Tins::PacketSender sender;
 };
 

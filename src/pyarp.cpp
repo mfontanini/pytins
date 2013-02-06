@@ -26,25 +26,42 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+ 
+#include "pyarp.h"
 
-#ifndef PYTINS_IP_H
-#define PYTINS_IP_H
+using Tins::ARP;
 
-#include <tins/ip.h>
-#include <tins/pdu.h>
-#include "pypdu.h"
-
-
-class PyIP : public PyPDU {
-public:
-    typedef Tins::IP::address_type address_type;
-
-    static void python_register();
+PyARP::PyARP(ipaddress_type target_ip, ipaddress_type sender_ip, 
+  const hwaddress_type &target_hw, const hwaddress_type &sender_hw)
+: PyPDU(new ARP(target_ip, sender_ip, target_hw, sender_hw))
+{
     
-    PyIP(const address_type &dst_addr = address_type(),
-      const address_type &src_addr = address_type());
-    
-    PyIP(Tins::PDU *pdu);
-};
+}
 
-#endif // PYTINS_IP_H
+PyARP::PyARP(Tins::PDU *pdu)
+: PyPDU(pdu)
+{
+    
+}
+
+void PyARP::python_register() {
+    using namespace boost::python;
+    
+    class_<PyARP, bases<PyPDU> >("ARP")
+        .def(init<optional<ipaddress_type, ipaddress_type, hwaddress_type, hwaddress_type> >())
+        PYTINS_MAKE_ATTR(uint16_t, ARP, hw_addr_format)
+        PYTINS_MAKE_ATTR(uint16_t, ARP, prot_addr_format)
+        PYTINS_MAKE_ATTR(uint8_t, ARP, hw_addr_length)
+        PYTINS_MAKE_ATTR(uint8_t, ARP, prot_addr_length)
+        PYTINS_MAKE_ATTR2(uint16_t, ARP::Flags, ARP, opcode)
+        PYTINS_MAKE_ATTR(ipaddress_type, ARP, sender_ip_addr)
+        PYTINS_MAKE_ATTR(ipaddress_type, ARP, target_ip_addr)
+        PYTINS_MAKE_ATTR2(hwaddress_type, const hwaddress_type&, ARP, target_hw_addr)
+        PYTINS_MAKE_ATTR2(hwaddress_type, const hwaddress_type&, ARP, sender_hw_addr)
+    ;
+    
+    enum_<ARP::Flags>("ARPFlags")
+        .value("REQUEST", ARP::REQUEST)
+        .value("REPLY", ARP::REPLY)
+    ;
+}

@@ -27,8 +27,48 @@
  *
  */
 
-#ifndef PYTINS_HWADDRESS_H
-#define PYTINS_HWADDRESS_H
+#include "utils.h"
+#include "pyrawpdu.h"
 
+using Tins::RawPDU;
 
-#endif // PYTINS_HWADDRESS_H
+PyRawPDU::PyRawPDU(Tins::PDU *pdu) 
+: PyPDU(pdu) 
+{ 
+    
+}
+    
+PyRawPDU::PyRawPDU(const std::string &str)
+: PyPDU(new RawPDU(str)) 
+{
+    
+}
+
+PyRawPDU::iterator PyRawPDU::begin() {
+    return static_cast<RawPDU*>(pdu())->payload().begin();
+}
+
+PyRawPDU::iterator PyRawPDU::end() {
+    return static_cast<RawPDU*>(pdu())->payload().end();
+}
+
+std::string PyRawPDU::to_string() {
+    return std::string(
+        (const char *)&begin()[0], 
+        (const char *)&end()[0]
+    );
+}
+
+std::string PyRawPDU::repr() {
+    return "Raw(" + PyUtils::string_repr(to_string()) + ")";
+}
+
+void PyRawPDU::python_register() {
+    using namespace boost::python;
+    
+    class_<PyRawPDU, bases<PyPDU> >("RawPDU", init<const std::string&>())
+        .def("__iter__", boost::python::iterator<PyRawPDU>())
+        .def("__str__", &PyRawPDU::to_string)
+        .def("__repr__", &PyRawPDU::repr)
+    ;
+}
