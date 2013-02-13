@@ -33,13 +33,13 @@
 using Tins::TCP;
     
 PyTCP::PyTCP(uint16_t dport, uint16_t sport) 
-: PyPDU(new TCP(dport, sport))
+: ClonablePyPDU<PyTCP>(new TCP(dport, sport))
 {
     
 }
 
 PyTCP::PyTCP(Tins::PDU *pdu) 
-: PyPDU(pdu)
+: ClonablePyPDU<PyTCP>(pdu)
 {
     
 }
@@ -50,10 +50,23 @@ void PyTCP::python_register() {
     class_<PyTCP, bases<PyPDU> >("TCP", init<optional<uint16_t, uint16_t> >())
         PYTINS_MAKE_ATTR(uint16_t, TCP, sport)
         PYTINS_MAKE_ATTR(uint16_t, TCP, dport)
-        PYTINS_MAKE_ATTR(uint32_t, TCP, seq)
         PYTINS_MAKE_ATTR(uint32_t, TCP, ack_seq)
+        PYTINS_MAKE_ATTR(uint32_t, TCP, seq)
         PYTINS_MAKE_ATTR(uint16_t, TCP, window)
         PYTINS_MAKE_ATTR(uint16_t, TCP, check)
         PYTINS_MAKE_ATTR(uint16_t, TCP, urg_ptr)
+        PYTINS_MAKE_GETTER_SETTER(uint16_t, TCP, mss)
+        PYTINS_MAKE_GETTER_SETTER(uint8_t, TCP, winscale)
+        .def("has_sack_permitted", make_getter_wrapper(&TCP::has_sack_permitted))
+        .def("set_sack_permitted", make_setter_wrapper(&TCP::sack_permitted))
+        PYTINS_MAKE_GETTER_SETTER2(TCP::sack_type, const TCP::sack_type&, TCP, sack)
+        PYTINS_MAKE_GETTER_SETTER(TCP::AltChecksums, TCP, altchecksum)
+        .setattr("pdu_type", Tins::PDU::TCP)
+    ;
+    
+    enum_<TCP::AltChecksums>("TCPAltChecksums")
+        .value("CHK_TCP", TCP::CHK_TCP)
+        .value("CHK_8FLETCHER", TCP::CHK_8FLETCHER)
+        .value("CHK_16FLETCHER", TCP::CHK_16FLETCHER)
     ;
 }

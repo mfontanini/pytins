@@ -28,10 +28,13 @@
  */
 
 #include <string>
+#include <vector>
 #include <boost/python.hpp>
 #include <boost/python/def.hpp>
+#include <boost/python/suite/indexing/vector_indexing_suite.hpp>
 #include <tins/hw_address.h>
 #include <tins/ip_address.h>
+#include <tins/ipv6_address.h>
 #include <tins/network_interface.h>
 #include "pyhelpers.h"
 
@@ -41,13 +44,30 @@ using namespace Tins;
 namespace PyHelpers {
     void python_register() {
         class_<HWAddress<6> >("HWAddress6", init<const std::string&>())
+            .def(init<>())
             .def("__str__", &HWAddress<6>::to_string)
             .def("__repr__", &HWAddress<6>::to_string)
+            .def(self == HWAddress<6>())
+            .def(self != HWAddress<6>())
+            .def(self < HWAddress<6>())
         ;
         
         class_<IPv4Address>("IPv4Address", init<const std::string&>())
+            .def(init<>())
             .def("__str__", &IPv4Address::to_string)
             .def("__repr__", &IPv4Address::to_string)
+            .def(self == IPv4Address())
+            .def(self != IPv4Address())
+            .def(self < IPv4Address())
+        ;
+        
+        class_<IPv6Address>("IPv6Address", init<const std::string&>())
+            .def(init<>())
+            .def("__str__", &IPv6Address::to_string)
+            .def("__repr__", &IPv6Address::to_string)
+            .def(self == IPv6Address())
+            .def(self != IPv6Address())
+            .def(self < IPv6Address())
         ;
 
         class_<NetworkInterface::Info>("InterfaceInfo", no_init)
@@ -57,10 +77,24 @@ namespace PyHelpers {
             .add_property("hw_addr", &NetworkInterface::Info::hw_addr)
         ;
         
-        class_<NetworkInterface>("NetworkInterface", init<const std::string&>())
+        class_<NetworkInterface>("NetworkInterface", init<>())
+            .def(init<const std::string&>())
             .add_property("__str__", &NetworkInterface::name)
             .add_property("addresses", &NetworkInterface::addresses)
             .add_property("id", &NetworkInterface::id)
+        ;
+     
+        // Containers
+        class_<std::vector<uint8_t> >("vector8")
+            .def(vector_indexing_suite<std::vector<uint8_t>>())
+        ;
+        
+        class_<std::vector<uint16_t> >("vector16")
+            .def(vector_indexing_suite<std::vector<uint16_t>>())
+        ;
+        
+        class_<std::vector<uint32_t> >("vector32")
+            .def(vector_indexing_suite<std::vector<uint32_t>>())
         ;
         
         implicitly_convertible<std::string, HWAddress<6> >();

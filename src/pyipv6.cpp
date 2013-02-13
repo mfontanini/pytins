@@ -27,30 +27,34 @@
  *
  */
  
-#include <tins/udp.h>
-#include "pyudp.h"
+#include "pyipv6.h"
 
-using Tins::UDP;
-    
-PyUDP::PyUDP(uint16_t dport, uint16_t sport) 
-: ClonablePyPDU<PyUDP>(new UDP(dport, sport))
+using namespace Tins;
+
+PyIPv6::PyIPv6(const address_type &dst_addr, const address_type &src_addr) 
+: ClonablePyPDU<PyIPv6>(new IPv6(dst_addr, src_addr))
 {
+      
+}
+
+PyIPv6::PyIPv6(Tins::PDU *pdu) 
+: ClonablePyPDU<PyIPv6>(pdu) {
     
 }
 
-PyUDP::PyUDP(Tins::PDU *pdu) 
-: ClonablePyPDU<PyUDP>(pdu)
-{
-    
-}
-
-void PyUDP::python_register() {
+void PyIPv6::python_register() {
     using namespace boost::python;
     
-    class_<PyUDP, bases<PyPDU> >("UDP", init<optional<uint16_t, uint16_t> >())
-        PYTINS_MAKE_ATTR(uint16_t, UDP, sport)
-        PYTINS_MAKE_ATTR(uint16_t, UDP, dport)
-        PYTINS_MAKE_ATTR(uint16_t, UDP, length)
-        .setattr("pdu_type", Tins::PDU::UDP)
+    class_<PyIPv6, bases<PyPDU> >("IPv6", init<optional<address_type, address_type> >())
+        PYTINS_MAKE_ATTR2(IPv6::address_type, const IPv6::address_type&, IPv6, src_addr)
+        PYTINS_MAKE_ATTR2(IPv6::address_type, const IPv6::address_type&, IPv6, dst_addr)
+        PYTINS_MAKE_ATTR(small_uint<4>, IPv6, version)
+        PYTINS_MAKE_ATTR(uint8_t, IPv6, traffic_class)
+        PYTINS_MAKE_ATTR(small_uint<20>, IPv6, flow_label)
+        PYTINS_MAKE_ATTR(uint16_t, IPv6, payload_length)
+        PYTINS_MAKE_ATTR(uint8_t, IPv6, next_header)
+        PYTINS_MAKE_ATTR(uint8_t, IPv6, hop_limit)
+        PYTINS_MAKE_ATTR(small_uint<4>, IPv6, version)
+        .setattr("pdu_type", Tins::PDU::IPv6)
     ;
 }

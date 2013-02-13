@@ -33,7 +33,7 @@
 #include <tins/pdu.h>
 #include "pypdu.h"
 
-class PyTCP : public PyPDU {
+class PyTCP : public ClonablePyPDU<PyTCP> {
 public:
     static void python_register();
     

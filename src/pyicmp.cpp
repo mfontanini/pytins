@@ -32,13 +32,13 @@
 using Tins::ICMP;
 
 PyICMP::PyICMP(ICMP::Flags flag) 
-: PyPDU(new ICMP(flag))
+: ClonablePyPDU<PyICMP>(new ICMP(flag))
 {
     
 }
 
 PyICMP::PyICMP(Tins::PDU *pdu) 
-: PyPDU(pdu)
+: ClonablePyPDU<PyICMP>(pdu)
 {
     
 }
@@ -52,10 +52,10 @@ void PyICMP::python_register() {
         PYTINS_MAKE_ATTR(uint16_t, ICMP, id)
         PYTINS_MAKE_ATTR(uint16_t, ICMP, mtu)
         PYTINS_MAKE_ATTR(uint8_t, ICMP, pointer)
-        PYTINS_MAKE_ATTR(uint16_t, ICMP, check)
         PYTINS_MAKE_ATTR(uint16_t, ICMP, sequence)
         PYTINS_MAKE_ATTR(uint32_t, ICMP, gateway)
         PYTINS_MAKE_ATTR(ICMP::Flags, ICMP, type)
+        .setattr("pdu_type", Tins::PDU::ICMP)
     ;
     
     enum_<ICMP::Flags>("ICMPFlags")

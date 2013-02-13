@@ -30,8 +30,8 @@
 #ifndef PYTINS_PYPDU_H
 #define PYTINS_PYPDU_H
 
-#include <boost/mpl/vector.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
+#include <vector>
 #include <tins/pdu.h>
 #include <tins/small_uint.h>
 #include <tins/packet.h>
@@ -41,9 +41,19 @@ public:
     static PyPDU *from_pdu(Tins::PDU *pdu);
     static void python_register();
 
+    PyPDU() : owns_pdu_(false) { }
+
+    PyPDU(const std::string &str);
+
     PyPDU(Tins::PDU *pdu_ptr);
     
-    PyPDU() {}
+    PyPDU(const PyPDU &rhs);
+    PyPDU& operator=(const PyPDU &rhs);
+    
+    // we haz dtor, so we defaultz da movz
+    PyPDU(PyPDU&&) = default;
+    
+    PyPDU& operator=(PyPDU&&) = default;
     
     virtual ~PyPDU();
 
@@ -59,14 +69,27 @@ public:
     
     Tins::PDU *pdu();
     
-    PyPDU *inner_pdu();
+    PyPDU *get_inner_pdu();
     
-    PyPDU operator/(const PyPDU &rhs);
+    // pdu is cloned
+    void set_inner_pdu(PyPDU *pdu);
+    
+    PyPDU *find_pdu_by_type(Tins::PDU::PDUType type);
+    
+    PyPDU *clone();
+    
+    PyPDU *operator/(const PyPDU &rhs);
     PyPDU &operator/=(const PyPDU &rhs);
 protected:
+    virtual PyPDU *clone_impl(Tins::PDU *pdu) {
+        return new PyPDU(pdu);
+    }
     void set_pdu(Tins::PDU *apdu);
 private:
-    boost::shared_ptr<Tins::PDU> pdu_;
+    void set_owns_pdu(bool value = true);
+
+    std::unique_ptr<Tins::PDU> pdu_;
+    bool owns_pdu_;
 };
 
 template<typename T>
@@ -76,91 +99,35 @@ public:
     : PyPDU(pdu) { }
 };
 
-template<typename T>
-struct type_filter {
-    typedef T type;
-};
+#include "cppwrappers.h"
 
-template<size_t n>
-struct type_filter<Tins::small_uint<n> > {
-    typedef typename Tins::small_uint<n>::repr_type type;
-};
-
-
-template<typename Result, typename Class>
-struct getter_wrapper {
-    typedef typename type_filter<Result>::type result_type;
-    typedef Result (Class::*function_type)() const;
+template<typename Derived>
+class ClonablePyPDU : public PyPDU {
+public:
+    ClonablePyPDU(Tins::PDU *pdu) : PyPDU(pdu) {}
     
-    getter_wrapper(function_type function)
-    : function(function) { }
-
-    result_type operator()(const PyPDU *pdu) const {
-        const Class *cl = static_cast<const Class*>(pdu->pdu());
-        return (cl->*function)();
+    PyPDU *clone_impl(Tins::PDU *pdu) {
+        return new Derived(pdu);
     }
-
-    function_type function;
 };
-
-template<typename ArgType, typename Class>
-struct setter_wrapper {
-    typedef typename type_filter<ArgType>::type arg_type;
-    typedef void (Class::*function_type)(ArgType);
-    
-    setter_wrapper(function_type function)
-    : function(function) { }
-
-    void operator()(PyPDU *pdu, arg_type arg) const {
-        Class *cl = static_cast<Class*>(pdu->pdu());
-        (cl->*function)(arg);
-    }
-
-    function_type function;
-};
-
-namespace boost { namespace python { namespace detail {
-
-    template <class Result, typename Class>
-    inline boost::mpl::vector<typename getter_wrapper<Result, Class>::result_type, const PyPDU*>
-    get_signature(getter_wrapper<Result, Class>, const PyPDU* = 0)
-    {
-        return boost::mpl::vector<
-            typename getter_wrapper<Result, Class>::result_type, 
-            const PyPDU*
-        >();
-    }
-    
-    template <class ArgType, typename Class>
-    inline boost::mpl::vector<void, PyPDU*, typename setter_wrapper<ArgType, Class>::arg_type>
-    get_signature(setter_wrapper<ArgType, Class>, PyPDU* = 0)
-    {
-        return boost::mpl::vector<
-            void, 
-            PyPDU*, 
-            typename setter_wrapper<ArgType, Class>::arg_type
-        >();
-    }
-
-} } }
-
-template<typename Result, typename Class>
-getter_wrapper<Result, Class> 
-make_getter_wrapper(Result (Class::*fun)() const) {
-    return getter_wrapper<Result, Class>(fun);
-}
-
-template<typename ArgType, typename Class>
-setter_wrapper<ArgType, Class> 
-make_setter_wrapper(void (Class::*fun)(ArgType)) {
-    return setter_wrapper<ArgType, Class>(fun);
-}
 
 class PyPacket {
 public:
     PyPacket(const Tins::PtrPacket &pck) 
     : pdu_(PyPDU::from_pdu(const_cast<Tins::PDU*>(pck.pdu()))) { 
     }
+    
+    PyPacket(const PyPacket &rhs) {
+        *this = rhs;
+    }
+    
+    PyPacket& operator=(const PyPacket &rhs) {
+        pdu_.reset(rhs.pdu_->clone());
+        return *this;
+    }
+    
+    PyPacket(PyPacket &&) = default;
+    PyPacket& operator=(PyPacket &&) = default;
     
     PyPacket(const Tins::PDU &pck) 
     : pdu_(PyPDU::from_pdu(pck.clone())) { 
@@ -170,7 +137,7 @@ public:
         return *pdu_;
     }
 private:
-    boost::shared_ptr<PyPDU> pdu_;
+    std::unique_ptr<PyPDU> pdu_;
 };
 
 #include <boost/python.hpp>
@@ -194,5 +161,12 @@ private:
 
 #define PYTINS_MAKE_ATTR2(GETTER_TYPE, SETTER_TYPE, CLASS, NAME) \
     .add_property(#NAME, PYTINS_GETTER_FUN(GETTER_TYPE, CLASS, NAME), PYTINS_SETTER_FUN(SETTER_TYPE, CLASS, NAME))
+
+#define PYTINS_MAKE_GETTER_SETTER2(GETTER_TYPE, SETTER_TYPE, CLASS, NAME) \
+    .def("get_"#NAME, PYTINS_GETTER_FUN(GETTER_TYPE, CLASS, NAME)) \
+    .def("set_"#NAME, PYTINS_SETTER_FUN(SETTER_TYPE, CLASS, NAME))
+
+#define PYTINS_MAKE_GETTER_SETTER(TYPE, CLASS, NAME) \
+    PYTINS_MAKE_GETTER_SETTER2(TYPE, TYPE, CLASS, NAME)
 
 #endif // PYTINS_PYPDU_H

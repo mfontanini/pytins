@@ -33,13 +33,13 @@
 using Tins::RawPDU;
 
 PyRawPDU::PyRawPDU(Tins::PDU *pdu) 
-: PyPDU(pdu) 
+: ClonablePyPDU<PyRawPDU>(pdu) 
 { 
     
 }
     
 PyRawPDU::PyRawPDU(const std::string &str)
-: PyPDU(new RawPDU(str)) 
+: ClonablePyPDU<PyRawPDU>(new RawPDU(str)) 
 {
     
 }
@@ -70,5 +70,6 @@ void PyRawPDU::python_register() {
         .def("__iter__", boost::python::iterator<PyRawPDU>())
         .def("__str__", &PyRawPDU::to_string)
         .def("__repr__", &PyRawPDU::repr)
+        .setattr("pdu_type", Tins::PDU::RAW)
     ;
 }

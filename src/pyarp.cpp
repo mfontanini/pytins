@@ -33,13 +33,13 @@ using Tins::ARP;
 
 PyARP::PyARP(ipaddress_type target_ip, ipaddress_type sender_ip, 
   const hwaddress_type &target_hw, const hwaddress_type &sender_hw)
-: PyPDU(new ARP(target_ip, sender_ip, target_hw, sender_hw))
+: ClonablePyPDU<PyARP>(new ARP(target_ip, sender_ip, target_hw, sender_hw))
 {
     
 }
 
 PyARP::PyARP(Tins::PDU *pdu)
-: PyPDU(pdu)
+: ClonablePyPDU<PyARP>(pdu)
 {
     
 }
@@ -58,6 +58,7 @@ void PyARP::python_register() {
         PYTINS_MAKE_ATTR(ipaddress_type, ARP, target_ip_addr)
         PYTINS_MAKE_ATTR2(hwaddress_type, const hwaddress_type&, ARP, target_hw_addr)
         PYTINS_MAKE_ATTR2(hwaddress_type, const hwaddress_type&, ARP, sender_hw_addr)
+        .setattr("pdu_type", Tins::PDU::ARP)
     ;
     
     enum_<ARP::Flags>("ARPFlags")

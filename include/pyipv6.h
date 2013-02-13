@@ -26,31 +26,23 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
- 
-#include <tins/udp.h>
-#include "pyudp.h"
 
-using Tins::UDP;
-    
-PyUDP::PyUDP(uint16_t dport, uint16_t sport) 
-: ClonablePyPDU<PyUDP>(new UDP(dport, sport))
-{
-    
-}
+#ifndef PYTINS_PYIPV6_H
+#define PYTINS_PYIPV6_H
 
-PyUDP::PyUDP(Tins::PDU *pdu) 
-: ClonablePyPDU<PyUDP>(pdu)
-{
-    
-}
+#include <tins/ipv6.h>
+#include "pypdu.h"
 
-void PyUDP::python_register() {
-    using namespace boost::python;
+class PyIPv6 : public ClonablePyPDU<PyIPv6> {
+public:
+    typedef Tins::IPv6::address_type address_type;
+
+    static void python_register();
     
-    class_<PyUDP, bases<PyPDU> >("UDP", init<optional<uint16_t, uint16_t> >())
-        PYTINS_MAKE_ATTR(uint16_t, UDP, sport)
-        PYTINS_MAKE_ATTR(uint16_t, UDP, dport)
-        PYTINS_MAKE_ATTR(uint16_t, UDP, length)
-        .setattr("pdu_type", Tins::PDU::UDP)
-    ;
-}
+    PyIPv6(const address_type &dst_addr = address_type(),
+      const address_type &src_addr = address_type());
+    
+    PyIPv6(Tins::PDU *pdu);
+};
+
+#endif // PYTINS_PYIPV6_H

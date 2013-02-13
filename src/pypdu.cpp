@@ -27,6 +27,7 @@
  *
  */
 
+#include <stdexcept>
 #include "pyethernetII.h"
 #include "pyip.h"
 #include "pytcp.h"
@@ -35,37 +36,100 @@
 #include "pyrawpdu.h"
 #include "pypdu.h"
 #include "pyarp.h"
+#include "pyipv6.h"
 
-PyPDU::PyPDU(Tins::PDU *pdu_ptr) : pdu_(pdu_ptr) { }
+using Tins::PDU;
 
-PyPDU::~PyPDU() {}
+class NoInnerPDU : public std::exception {
+public:
+    const char *what() const throw() {
+        return "No inner PDU set";
+    }
+};
+
+class PDUNotFound : public std::exception {
+public:
+    const char *what() const throw() {
+        return "PDU not found";
+    }
+};
+
+PyPDU::PyPDU(const std::string &str) 
+: pdu_(new Tins::RawPDU(str)) 
+{
+    
+}
+
+PyPDU::PyPDU(Tins::PDU *pdu_ptr) 
+: pdu_(pdu_ptr) 
+{ 
+    
+}
+
+PyPDU::PyPDU(const PyPDU &rhs) {
+    *this = rhs;
+}
+
+PyPDU& PyPDU::operator=(const PyPDU &rhs) {
+    owns_pdu_ = false;
+    pdu_.reset(rhs.pdu()->clone());
+    return *this;
+}
+
+PyPDU::~PyPDU() {
+    if(!owns_pdu_)
+        pdu_.release();
+}
     
 uint32_t PyPDU::header_size() const {
     return pdu()->header_size();
 }
     
-Tins::PDU* PyPDU::clone() const {
+PDU* PyPDU::clone() const {
     return pdu()->clone();
 }
     
-Tins::PDU::PDUType PyPDU::pdu_type() const {
+PDU::PDUType PyPDU::pdu_type() const {
     return pdu()->pdu_type();
 }
     
-Tins::PDU::serialization_type PyPDU::serialize() {
+PDU::serialization_type PyPDU::serialize() {
     return pdu()->serialize();
 }
-    
-const Tins::PDU *PyPDU::pdu() const {
+
+const PDU *PyPDU::pdu() const {
     return pdu_.get();
 }
     
-Tins::PDU *PyPDU::pdu() {
+PDU *PyPDU::pdu() {
     return pdu_.get();
 }
+
+void PyPDU::set_owns_pdu(bool value) {
+    owns_pdu_ = value;
+}
+
+PyPDU *PyPDU::find_pdu_by_type(PDU::PDUType type) {
+    Tins::PDU *pdu_found = pdu_->find_pdu<PDU>(type);
+    if(!pdu_found)
+        throw PDUNotFound();
+    PyPDU *result = PyPDU::from_pdu(pdu_found);
+    result->set_owns_pdu(false);
+    return result;
+}
     
-PyPDU *PyPDU::inner_pdu() {
-    return PyPDU::from_pdu(pdu_->inner_pdu());
+PyPDU *PyPDU::get_inner_pdu() {
+    if(pdu_->inner_pdu()) {
+        auto result = PyPDU::from_pdu(pdu_->inner_pdu());
+        result->set_owns_pdu(false);
+        return result;
+    }
+    else 
+        throw NoInnerPDU();
+}
+
+void PyPDU::set_inner_pdu(PyPDU *pdu) {
+    pdu_->inner_pdu(pdu->pdu()->clone());
 }
 
 void PyPDU::set_pdu(Tins::PDU *apdu) {
@@ -88,14 +152,21 @@ PyPDU *PyPDU::from_pdu(Tins::PDU *pdu) {
             return new PyARP(pdu);
         case Tins::PDU::RAW:
             return new PyRawPDU(pdu);
+        case Tins::PDU::IPv6:
+            return new PyIPv6(pdu);
         default:
             return 0;
     };
 }
 
-PyPDU PyPDU::operator/(const PyPDU &rhs) {
-    PyPDU copy(*this);
-    return copy /= rhs;
+PyPDU *PyPDU::clone() {
+    return clone_impl(pdu_->clone());
+}
+
+PyPDU *PyPDU::operator/(const PyPDU &rhs) {
+    PyPDU *copy = clone();
+    *copy /= rhs;
+    return copy;
 }
 
 PyPDU &PyPDU::operator/=(const PyPDU &rhs) {
@@ -110,10 +181,48 @@ void PyPDU::python_register()
 {
     using namespace boost::python;
     
-    class_<PyPDU>("PDU", no_init)
-        .def("serialize", &PyPDU::serialize)
-        .def("inner_pdu", &PyPDU::inner_pdu, return_value_policy<manage_new_object>())
+    class_<PyPDU, boost::noncopyable>("PDU", no_init)
+        .def("serialize", make_getter_wrapper(&PyPDU::serialize))
+        .add_property(
+            "inner_pdu", 
+            make_function(&PyPDU::get_inner_pdu, return_value_policy<manage_new_object>()), 
+            &PyPDU::set_inner_pdu
+        )
         .def(self /= other<PyPDU>())
-        .def(self / other<PyPDU>())
+        .def("__div__", &PyPDU::operator/, return_value_policy<manage_new_object>())
+        .def("find_pdu_by_type", &PyPDU::find_pdu_by_type, return_value_policy<manage_new_object>())
     ;
+    
+    
+    enum_<PDU::PDUType>("PDUType")
+        .value("RAW", PDU::RAW)
+        .value("ETHERNET_II", PDU::ETHERNET_II)
+        .value("LLC", PDU::LLC)
+        .value("SNAP", PDU::SNAP)
+        .value("ARP", PDU::ARP)
+        .value("TCP", PDU::TCP)
+        .value("UDP", PDU::UDP)
+        .value("ICMP", PDU::ICMP)
+        .value("BOOTP", PDU::BOOTP)
+        .value("DHCP", PDU::DHCP)
+        .value("EAPOL", PDU::EAPOL)
+        .value("RC4EAPOL", PDU::RC4EAPOL)
+        .value("RSNEAPOL", PDU::RSNEAPOL)
+        .value("DNS", PDU::DNS)
+        .value("LOOPBACK", PDU::LOOPBACK)
+        .value("IPv6", PDU::IPv6)
+        .value("ICMPv6", PDU::ICMPv6)
+        .value("SLL", PDU::SLL)
+        .value("DHCPv6", PDU::DHCPv6)
+    ;
+    
+    class_<PDUNotFound>("PDUNotFound", no_init)
+        .def("__str__", &PDUNotFound::what)
+    ;
+    
+    class_<NoInnerPDU>("NoInnerPDU", no_init)
+        .def("__str__", &NoInnerPDU::what)
+    ;
+    
+    implicitly_convertible<std::string, PyPDU>();
 }

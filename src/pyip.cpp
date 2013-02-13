@@ -33,13 +33,13 @@ using Tins::IP;
 using Tins::small_uint;
 
 PyIP::PyIP(const address_type &dst_addr, const address_type &src_addr) 
-: PyPDU(new IP(dst_addr, src_addr))
+: ClonablePyPDU<PyIP>(new IP(dst_addr, src_addr))
 {
     
 }
 
 PyIP::PyIP(Tins::PDU *pdu) 
-: PyPDU(pdu)
+: ClonablePyPDU<PyIP>(pdu)
 {
     
 }
@@ -59,5 +59,6 @@ void PyIP::python_register() {
         PYTINS_MAKE_ATTR(uint8_t, IP, ttl)
         PYTINS_MAKE_ATTR(uint8_t, IP, protocol)
         PYTINS_MAKE_ATTR(uint16_t, IP, check)
+        .setattr("pdu_type", Tins::PDU::IP)
     ;
 }

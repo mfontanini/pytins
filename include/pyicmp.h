@@ -33,7 +33,7 @@
 #include <tins/icmp.h>
 #include "pypdu.h"
 
-class PyICMP : public PyPDU {
+class PyICMP : public ClonablePyPDU<PyICMP> {
 public:
     static void python_register();
     

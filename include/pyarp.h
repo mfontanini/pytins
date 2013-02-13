@@ -33,7 +33,7 @@
 #include <tins/arp.h>
 #include "pypdu.h"
 
-class PyARP : public PyPDU {
+class PyARP : public ClonablePyPDU<PyARP> {
 public:
     typedef Tins::ARP::hwaddress_type hwaddress_type;
     typedef Tins::ARP::ipaddress_type ipaddress_type;

@@ -27,30 +27,27 @@
  *
  */
  
-#include <tins/udp.h>
-#include "pyudp.h"
+#ifndef PYTINS_PACKETWRITER_H
+#define PYTINS_PACKETWRITER_H
 
-using Tins::UDP;
-    
-PyUDP::PyUDP(uint16_t dport, uint16_t sport) 
-: ClonablePyPDU<PyUDP>(new UDP(dport, sport))
-{
-    
-}
+#include <string>
+#include <tins/packet_writer.h>
+#include <boost/python/list.hpp>
 
-PyUDP::PyUDP(Tins::PDU *pdu) 
-: ClonablePyPDU<PyUDP>(pdu)
-{
-    
-}
+class PyPDU;
 
-void PyUDP::python_register() {
-    using namespace boost::python;
+class PyPacketWriter {
+public:
+    typedef Tins::PacketWriter::LinkType LinkType;
+    static void python_register();
+
+    PyPacketWriter(const std::string &path, LinkType lt);
     
-    class_<PyUDP, bases<PyPDU> >("UDP", init<optional<uint16_t, uint16_t> >())
-        PYTINS_MAKE_ATTR(uint16_t, UDP, sport)
-        PYTINS_MAKE_ATTR(uint16_t, UDP, dport)
-        PYTINS_MAKE_ATTR(uint16_t, UDP, length)
-        .setattr("pdu_type", Tins::PDU::UDP)
-    ;
-}
+    void write(PyPDU &pdu);
+    
+    void write_all(boost::python::list &lst);
+private:
+    Tins::PacketWriter writer;
+};
+
+#endif // PYTINS_PACKETWRITER_H

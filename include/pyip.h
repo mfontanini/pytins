@@ -35,7 +35,7 @@
 #include "pypdu.h"
 
 
-class PyIP : public PyPDU {
+class PyIP : public ClonablePyPDU<PyIP> {
 public:
     typedef Tins::IP::address_type address_type;
 

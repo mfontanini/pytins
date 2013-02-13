@@ -26,31 +26,38 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
- 
-#include <tins/udp.h>
-#include "pyudp.h"
 
-using Tins::UDP;
-    
-PyUDP::PyUDP(uint16_t dport, uint16_t sport) 
-: ClonablePyPDU<PyUDP>(new UDP(dport, sport))
+#include "pypacketwriter.h"
+#include "pypdu.h"
+
+using namespace boost::python;
+
+PyPacketWriter::PyPacketWriter(const std::string &path, LinkType lt)
+: writer(path, lt)
 {
     
 }
 
-PyUDP::PyUDP(Tins::PDU *pdu) 
-: ClonablePyPDU<PyUDP>(pdu)
-{
-    
+void PyPacketWriter::write(PyPDU &pdu) {
+    writer.write(*pdu.pdu());
 }
 
-void PyUDP::python_register() {
-    using namespace boost::python;
+void PyPacketWriter::write_all(boost::python::list &lst) {
+    for (int i = 0; i < len(lst); ++i) {
+        write(extract<PyPDU&>(lst[i]));
+    }
+}
+
+void PyPacketWriter::python_register() {
+    enum_<LinkType>("LinkType")
+        .value("ETH2", LinkType::ETH2)
+        .value("SLL", LinkType::SLL)
+        .value("RADIOTAP", LinkType::RADIOTAP)
+        .value("DOT11", LinkType::DOT11)
+    ;
     
-    class_<PyUDP, bases<PyPDU> >("UDP", init<optional<uint16_t, uint16_t> >())
-        PYTINS_MAKE_ATTR(uint16_t, UDP, sport)
-        PYTINS_MAKE_ATTR(uint16_t, UDP, dport)
-        PYTINS_MAKE_ATTR(uint16_t, UDP, length)
-        .setattr("pdu_type", Tins::PDU::UDP)
+    class_<PyPacketWriter, boost::noncopyable >("PacketWriter", init<std::string, LinkType>())
+        .def("write", &PyPacketWriter::write)
+        .def("write_all", &PyPacketWriter::write_all)
     ;
 }

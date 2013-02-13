@@ -33,7 +33,7 @@
 #include <tins/pdu.h>
 #include "pypdu.h"
 
-class PyUDP : public PyPDU {
+class PyUDP : public ClonablePyPDU<PyUDP> {
 public:
     static void python_register();
     

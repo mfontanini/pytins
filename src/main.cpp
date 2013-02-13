@@ -37,24 +37,25 @@
 #include "pypdu.h" // MUST GO HERE
 #include <boost/python.hpp>
 #include <boost/python/def.hpp>
-#include <boost/python/suite/indexing/vector_indexing_suite.hpp>
 #include <boost/python/implicit.hpp>
 #include <boost/function.hpp>
 #include "pyethernetII.h"
 #include "pyip.h"
+#include "pyipv6.h"
 #include "pytcp.h"
 #include "pyudp.h"
 #include "pyarp.h"
 #include "pyicmp.h"
 #include "pyrawpdu.h"
 #include "pysender.h"
+#include "pypacketwriter.h"
 #include "pyhelpers.h"
 
 using namespace boost::python;
 
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(SnifferSniffLoopOverloads, sniff_loop, 1, 2)
 
-BOOST_PYTHON_MODULE(tins)
+BOOST_PYTHON_MODULE(tins_core)
 {
     using namespace Tins;
     
@@ -63,19 +64,17 @@ BOOST_PYTHON_MODULE(tins)
     PyHelpers::python_register();
     PyTCP::python_register();
     PyIP::python_register();
+    PyIPv6::python_register();
     PyUDP::python_register();
     PyICMP::python_register();
     PyARP::python_register();
     PyRawPDU::python_register();
     PyPacketSender::python_register();
+    PyPacketWriter::python_register();
     
     
     class_<PyPacket>("Packet", no_init)
         .def("pdu", &PyPacket::pdu, return_internal_reference<1>())
-    ;
-    
-    class_<Tins::PDU::serialization_type>("serialization_type")
-        .def(vector_indexing_suite<Tins::PDU::serialization_type>())
     ;
     
     class_<PySniffer, boost::noncopyable>("Sniffer", init<std::string, unsigned, optional<bool, std::string> >())

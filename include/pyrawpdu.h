@@ -35,7 +35,7 @@
 #include <tins/rawpdu.h>
 #include "pypdu.h"
 
-class PyRawPDU : public PyPDU {
+class PyRawPDU : public ClonablePyPDU<PyRawPDU> {
 public:
     typedef Tins::RawPDU::payload_type::iterator iterator;
     static void python_register();

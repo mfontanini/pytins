@@ -1,13 +1,13 @@
 CXX=g++
 CP=cp
-CXXFLAGS= -fPIC -shared -c -Wall -g
+CXXFLAGS= -fPIC -shared -c -Wall -g -std=c++0x
 INCLUDE = -Iinclude -I/usr/include/python2.7/
 LDFLAGS= -lboost_python -ltins -lpython2.7 -shared
 RM=rm
 SOURCES= $(wildcard src/*.cpp)
 OBJECTS=$(SOURCES:.cpp=.o)
 
-EXECUTABLE=tins.so
+EXECUTABLE=tins_core.so
 DEPS = $(SOURCES:.cpp=.d)
 
 all: $(SOURCES) $(EXECUTABLE)
