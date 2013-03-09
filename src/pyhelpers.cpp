@@ -29,8 +29,10 @@
 
 #include <string>
 #include <vector>
+#include <list>
 #include <boost/python.hpp>
 #include <boost/python/def.hpp>
+#include <boost/python/suite/indexing/vector_indexing_suite.hpp>
 #include <boost/python/suite/indexing/vector_indexing_suite.hpp>
 #include <tins/hw_address.h>
 #include <tins/ip_address.h>
@@ -85,16 +87,24 @@ namespace PyHelpers {
         ;
      
         // Containers
-        class_<std::vector<uint8_t> >("vector8")
+        class_<std::vector<uint8_t>>("vector_8")
             .def(vector_indexing_suite<std::vector<uint8_t>>())
         ;
         
-        class_<std::vector<uint16_t> >("vector16")
+        class_<std::vector<uint16_t>>("vector_16")
             .def(vector_indexing_suite<std::vector<uint16_t>>())
         ;
         
-        class_<std::vector<uint32_t> >("vector32")
+        class_<std::vector<uint32_t>>("vector_32")
             .def(vector_indexing_suite<std::vector<uint32_t>>())
+        ;
+        
+        class_<std::vector<IPv4Address>>("vector_ipv4")
+            .def(vector_indexing_suite<std::vector<IPv4Address>>())
+        ;
+        
+        class_<std::vector<IPv6Address>>("vector_ipv6")
+            .def(vector_indexing_suite<std::vector<IPv6Address>>())
         ;
         
         implicitly_convertible<std::string, HWAddress<6> >();

@@ -140,33 +140,4 @@ private:
     std::unique_ptr<PyPDU> pdu_;
 };
 
-#include <boost/python.hpp>
-#include <boost/python/def.hpp>
-
-#define PYTINS_GETTER_FUN(RETURN, CLASS, NAME) \
-    make_getter_wrapper((RETURN (CLASS::*)() const)(&CLASS::NAME))
-
-#define PYTINS_SETTER_FUN(ARGTYPE, CLASS, NAME) \
-    make_setter_wrapper((void (CLASS::*)(ARGTYPE))(&CLASS::NAME))
-
-#define PYTINS_MAKE_ATTR(ATTRTYPE, CLASS, NAME) \
-    .add_property(#NAME, PYTINS_GETTER_FUN(ATTRTYPE, CLASS, NAME), PYTINS_SETTER_FUN(ATTRTYPE, CLASS, NAME))
-
-#define PYTINS_MAKE_ATTR_POLICY(ATTRTYPE, CLASS, NAME, POLICY) \
-    .add_property( \
-        #NAME, \
-        make_function(PYTINS_GETTER_FUN(ATTRTYPE, CLASS, NAME), POLICY), \
-        make_function(PYTINS_SETTER_FUN(ATTRTYPE, CLASS, NAME), POLICY)\
-    )
-
-#define PYTINS_MAKE_ATTR2(GETTER_TYPE, SETTER_TYPE, CLASS, NAME) \
-    .add_property(#NAME, PYTINS_GETTER_FUN(GETTER_TYPE, CLASS, NAME), PYTINS_SETTER_FUN(SETTER_TYPE, CLASS, NAME))
-
-#define PYTINS_MAKE_GETTER_SETTER2(GETTER_TYPE, SETTER_TYPE, CLASS, NAME) \
-    .def("get_"#NAME, PYTINS_GETTER_FUN(GETTER_TYPE, CLASS, NAME)) \
-    .def("set_"#NAME, PYTINS_SETTER_FUN(SETTER_TYPE, CLASS, NAME))
-
-#define PYTINS_MAKE_GETTER_SETTER(TYPE, CLASS, NAME) \
-    PYTINS_MAKE_GETTER_SETTER2(TYPE, TYPE, CLASS, NAME)
-
 #endif // PYTINS_PYPDU_H

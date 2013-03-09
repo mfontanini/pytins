@@ -1,8 +1,8 @@
 src/main.o: src/main.cpp include/pysniffer.h include/pypdu.h \
  include/cppwrappers.h include/pyethernetII.h include/pypdu.h \
  include/pyip.h include/pyipv6.h include/pytcp.h include/pyudp.h \
- include/pyarp.h include/pyicmp.h include/pyrawpdu.h include/pysender.h \
- include/pypacketwriter.h include/pyhelpers.h
+ include/pyarp.h include/pydhcp.h include/pyicmp.h include/pyrawpdu.h \
+ include/pysender.h include/pypacketwriter.h include/pyhelpers.h
 
 include/pysniffer.h:
 
@@ -24,6 +24,8 @@ include/pyudp.h:
 
 include/pyarp.h:
 
+include/pydhcp.h:
+
 include/pyicmp.h:
 
 include/pyrawpdu.h:
@@ -37,6 +39,14 @@ src/pyarp.o: src/pyarp.cpp include/pyarp.h include/pypdu.h \
  include/cppwrappers.h
 
 include/pyarp.h:
+
+include/pypdu.h:
+
+include/cppwrappers.h:
+src/pydhcp.o: src/pydhcp.cpp include/pydhcp.h include/pypdu.h \
+ include/cppwrappers.h
+
+include/pydhcp.h:
 
 include/pypdu.h:
 

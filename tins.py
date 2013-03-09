@@ -1,7 +1,7 @@
 import tins_core
 from tins_core import NetworkInterface, HWAddress6, IPv4Address, IPv6Address, \
 ICMPFlags, PacketSender, PacketWriter, FileSniffer, Sniffer, LinkType, \
-RawPDU, PDUType, PDUNotFound, NoInnerPDU
+RawPDU, PDUType, PDUNotFound, NoInnerPDU, DHCP
 
 def find_pdu(self, pdu_class):
     return self.find_pdu_by_type(pdu_class.pdu_type)

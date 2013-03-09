@@ -31,6 +31,8 @@
 #define PYTINS_CPPWRAPPERS_H
 
 #include <vector>
+#include <list>
+#include <utility>
 #include <boost/mpl/vector.hpp>
 #include <boost/python/list.hpp>
 
@@ -44,12 +46,37 @@ namespace Conversions {
     }
     
     template<typename T>
-    std::vector<T> convert(const boost::python::list &lst) {
+    boost::python::list convert(const std::list<T> &input) {
+        boost::python::list result;
+        size_t i = 0;
+        for(auto iter = input.begin(); iter != input.end(); ++iter, ++i)
+            result.insert(i, *iter);
+        return result;
+    }
+    
+    template<typename T>
+    std::vector<T> convert2vector(const boost::python::list &lst) {
         std::vector<T> result;
         result.reserve(len(lst));
         for (int i = 0; i < len(lst); ++i) {
             result.push_back(boost::python::extract<T>(lst[i]));
         }
+        return result;
+    }
+    
+    template<typename T>
+    std::list<T> convert2list(const boost::python::list &lst) {
+        std::list<T> result;
+        for (int i = 0; i < len(lst); ++i) {
+            result.push_back(boost::python::extract<T>(lst[i]));
+        }
+        return result;
+    }
+    
+    inline boost::python::list convert(const uint8_t *input, size_t sz) {
+        boost::python::list result;
+        for(size_t i = 0; i < sz; ++i)
+            result.insert(i, input[i]);
         return result;
     }
 }
@@ -94,12 +121,12 @@ struct getter_wrapper {
     function_type function;
 };
 
-template<typename T, typename Class, typename Function>
-struct getter_wrapper<std::vector<T>, Class, Function> {
+template<typename _, typename Class, typename Function>
+struct conversion_getter_wrapper {
     typedef boost::python::list result_type;
     typedef Function function_type;
     
-    getter_wrapper(function_type function)
+    conversion_getter_wrapper(function_type function)
     : function(function) { }
 
     result_type operator()(PyPDU *pdu) const {
@@ -109,6 +136,43 @@ struct getter_wrapper<std::vector<T>, Class, Function> {
 
     function_type function;
 };
+
+
+template<typename T, typename Class, typename Function>
+struct getter_wrapper<std::vector<T>, Class, Function> 
+: public conversion_getter_wrapper<T, Class, Function> 
+{
+    getter_wrapper(Function function)
+    : conversion_getter_wrapper<T, Class, Function>(function) { }
+};
+
+template<typename T, typename Class, typename Function>
+struct getter_wrapper<std::list<T>, Class, Function> 
+: public conversion_getter_wrapper<T, Class, Function> 
+{
+    getter_wrapper(Function function)
+    : conversion_getter_wrapper<T, Class, Function>(function) { }
+};
+
+template<typename Class, typename Function>
+struct getter_wrapper<const uint8_t*, Class, Function> {
+    typedef boost::python::list result_type;
+    typedef Function function_type;
+    
+    getter_wrapper(function_type function, size_t sz)
+    : function(function), size(sz) { }
+
+    result_type operator()(PyPDU *pdu) const {
+        auto cl = dereference_wrapper<Class>::dereference(pdu);
+        return Conversions::convert((cl->*function)(), size);
+    }
+
+    function_type function;
+    size_t size;
+};
+
+
+// ***************************** Setters *******************************
 
 template<typename ArgType, typename Class>
 struct setter_wrapper {
@@ -152,10 +216,46 @@ struct setter_wrapper<const std::vector<T>&, Class> {
     
     void operator()(PyPDU *pdu, const arg_type &lst) const {
         auto cl = dereference_wrapper<Class>::dereference(pdu);
-        (cl->*function)(Conversions::convert<T>(lst));
+        (cl->*function)(Conversions::convert2vector<T>(lst));
     }
 
     function_type function;
+};
+
+template<typename T, typename Class>
+struct setter_wrapper<const std::list<T>&, Class> {
+    typedef boost::python::list arg_type;
+    typedef void (Class::*function_type)(const std::list<T>&);
+    
+    setter_wrapper(function_type function)
+    : function(function) { }
+    
+    void operator()(PyPDU *pdu, const arg_type &lst) const {
+        auto cl = dereference_wrapper<Class>::dereference(pdu);
+        (cl->*function)(Conversions::convert2list<T>(lst));
+    }
+
+    function_type function;
+};
+
+template<typename Class>
+struct setter_wrapper<const uint8_t*, Class> {
+    typedef boost::python::list arg_type;
+    typedef void (Class::*function_type)(const uint8_t *);
+    
+    setter_wrapper(function_type function, size_t min_sz)
+    : function(function), minimum_sz(min_sz) { }
+    
+    void operator()(PyPDU *pdu, const arg_type &lst) const {
+        auto cl = dereference_wrapper<Class>::dereference(pdu);
+        auto converted = Conversions::convert2vector<uint8_t>(lst);
+        if(converted.size() < minimum_sz)
+            throw std::runtime_error("Buffer too small");
+        (cl->*function)(&converted[0]);
+    }
+
+    function_type function;
+    size_t minimum_sz;
 };
 
 namespace boost { namespace python { namespace detail {
@@ -192,29 +292,66 @@ namespace boost { namespace python { namespace detail {
 
 } } }
 
-template<typename Result, typename Class>
+template<typename Result, typename Class, typename... Args>
 getter_wrapper<Result, Class, Result (Class::*)() const> 
-make_getter_wrapper(Result (Class::*fun)() const) {
-    return getter_wrapper<Result, Class, Result (Class::*)() const>(fun);
+make_getter_wrapper(Result (Class::*fun)() const, Args&&... args) {
+    return getter_wrapper<Result, Class, Result (Class::*)() const>(fun, std::forward<Args>(args)...);
 }
 
-template<typename Result, typename Class>
+template<typename Result, typename Class, typename... Args>
 getter_wrapper<Result, Class, Result (Class::*)()> 
-make_getter_wrapper(Result (Class::*fun)()) {
-    return getter_wrapper<Result, Class, Result (Class::*)()>(fun);
+make_getter_wrapper(Result (Class::*fun)(), Args&&... args) {
+    return getter_wrapper<Result, Class, Result (Class::*)()>(fun, std::forward<Args>(args)...);
 }
 
-template<typename ArgType, typename Class>
+template<typename ArgType, typename Class, typename... Args>
 setter_wrapper<ArgType, Class> 
-make_setter_wrapper(void (Class::*fun)(ArgType)) {
-    return setter_wrapper<ArgType, Class>(fun);
+make_setter_wrapper(void (Class::*fun)(ArgType), Args&&... args) {
+    return setter_wrapper<ArgType, Class>(fun, std::forward<Args>(args)...);
 }
 
-template<typename Class>
+template<typename Class, typename... Args>
 setter_wrapper<void, Class> 
-make_setter_wrapper(void (Class::*fun)()) {
-    return setter_wrapper<void, Class>(fun);
+make_setter_wrapper(void (Class::*fun)(), Args&&... args) {
+    return setter_wrapper<void, Class>(fun, std::forward<Args>(args)...);
 }
+
+
+
+#include <boost/python.hpp>
+#include <boost/python/def.hpp>
+
+#define PYTINS_GETTER_FUN(RETURN, CLASS, NAME) \
+    make_getter_wrapper((RETURN (CLASS::*)() const)(&CLASS::NAME))
+
+#define PYTINS_GETTER_FUN_ARG(RETURN, CLASS, NAME, ARG) \
+    make_getter_wrapper((RETURN (CLASS::*)() const)(&CLASS::NAME), ARG)
+
+#define PYTINS_SETTER_FUN(ARGTYPE, CLASS, NAME) \
+    make_setter_wrapper((void (CLASS::*)(ARGTYPE))(&CLASS::NAME))
+    
+#define PYTINS_SETTER_FUN_ARG(ARGTYPE, CLASS, NAME, ARG) \
+    make_setter_wrapper((void (CLASS::*)(ARGTYPE))(&CLASS::NAME), ARG)
+
+#define PYTINS_MAKE_ATTR(ATTRTYPE, CLASS, NAME) \
+    .add_property(#NAME, PYTINS_GETTER_FUN(ATTRTYPE, CLASS, NAME), PYTINS_SETTER_FUN(ATTRTYPE, CLASS, NAME))
+
+#define PYTINS_MAKE_ATTR_POLICY(ATTRTYPE, CLASS, NAME, POLICY) \
+    .add_property( \
+        #NAME, \
+        make_function(PYTINS_GETTER_FUN(ATTRTYPE, CLASS, NAME), POLICY), \
+        make_function(PYTINS_SETTER_FUN(ATTRTYPE, CLASS, NAME), POLICY)\
+    )
+
+#define PYTINS_MAKE_ATTR2(GETTER_TYPE, SETTER_TYPE, CLASS, NAME) \
+    .add_property(#NAME, PYTINS_GETTER_FUN(GETTER_TYPE, CLASS, NAME), PYTINS_SETTER_FUN(SETTER_TYPE, CLASS, NAME))
+
+#define PYTINS_MAKE_GETTER_SETTER2(GETTER_TYPE, SETTER_TYPE, CLASS, NAME) \
+    .def("get_"#NAME, PYTINS_GETTER_FUN(GETTER_TYPE, CLASS, NAME)) \
+    .def("set_"#NAME, PYTINS_SETTER_FUN(SETTER_TYPE, CLASS, NAME))
+
+#define PYTINS_MAKE_GETTER_SETTER(TYPE, CLASS, NAME) \
+    PYTINS_MAKE_GETTER_SETTER2(TYPE, TYPE, CLASS, NAME)
 
 
 #endif // PYTINS_CPPWRAPPERS_H
