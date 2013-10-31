@@ -45,12 +45,11 @@ public:
 
     PyPDU(const std::string &str);
 
-    PyPDU(Tins::PDU *pdu_ptr);
+    PyPDU(Tins::PDU *pdu_ptr, bool owns = true);
     
     PyPDU(const PyPDU &rhs);
     PyPDU& operator=(const PyPDU &rhs);
     
-    // we haz dtor, so we defaultz da movz
     PyPDU(PyPDU&&) = default;
     
     PyPDU& operator=(PyPDU&&) = default;
@@ -58,6 +57,8 @@ public:
     virtual ~PyPDU();
 
     uint32_t header_size() const;
+    
+    uint32_t size() const;
     
     Tins::PDU* clone() const;
     

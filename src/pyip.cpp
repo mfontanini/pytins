@@ -50,15 +50,15 @@ void PyIP::python_register() {
     class_<PyIP, bases<PyPDU> >("IP", init<optional<address_type, address_type> >())
         PYTINS_MAKE_ATTR(IP::address_type, IP, src_addr)
         PYTINS_MAKE_ATTR(IP::address_type, IP, dst_addr)
-        PYTINS_MAKE_ATTR(small_uint<4>, IP, head_len)
+        PYTINS_MAKE_RO_ATTR(small_uint<4>, IP, head_len)
         PYTINS_MAKE_ATTR(small_uint<4>, IP, version)
         PYTINS_MAKE_ATTR(uint8_t, IP, tos)
-        PYTINS_MAKE_ATTR(uint16_t, IP, tot_len)
+        PYTINS_MAKE_RO_ATTR(uint16_t, IP, tot_len)
         PYTINS_MAKE_ATTR(uint16_t, IP, id)
         PYTINS_MAKE_ATTR(uint16_t, IP, frag_off)
         PYTINS_MAKE_ATTR(uint8_t, IP, ttl)
         PYTINS_MAKE_ATTR(uint8_t, IP, protocol)
-        PYTINS_MAKE_ATTR(uint16_t, IP, check)
+        PYTINS_MAKE_RO_ATTR(uint16_t, IP, checksum)
         .setattr("pdu_type", Tins::PDU::IP)
     ;
 }

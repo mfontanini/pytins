@@ -38,9 +38,11 @@ struct callback_proxy {
     
     callback_proxy(PyObject* obj) : obj(obj) { }
     
-    bool operator()(Tins::RefPacket &pck) {
-        PyPacket packet(pck.pdu());
-        return call<bool>(obj, packet);
+    bool operator()(Tins::PDU &pdu) {
+        //PyPacket packet(pdu);
+        //return call<bool>(obj, packet);
+        PyPDU pypdu(&pdu, false);
+        return call<bool>(obj, boost::ref(pypdu));
     }
 };
 

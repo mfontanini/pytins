@@ -48,7 +48,7 @@ void PyICMP::python_register() {
     
     class_<PyICMP, bases<PyPDU> >("ICMP", init<optional<ICMP::Flags> >())
         PYTINS_MAKE_ATTR(uint8_t, ICMP, code)
-        PYTINS_MAKE_ATTR(uint16_t, ICMP, check)
+        PYTINS_MAKE_RO_ATTR(uint16_t, ICMP, check)
         PYTINS_MAKE_ATTR(uint16_t, ICMP, id)
         PYTINS_MAKE_ATTR(uint16_t, ICMP, mtu)
         PYTINS_MAKE_ATTR(uint8_t, ICMP, pointer)
