@@ -57,13 +57,13 @@ public:
 };
 
 PyPDU::PyPDU(const std::string &str) 
-: pdu_(new Tins::RawPDU(str)) 
+: pdu_(new Tins::RawPDU(str)), owns_pdu_(true)
 {
     
 }
 
-PyPDU::PyPDU(Tins::PDU *pdu_ptr) 
-: pdu_(pdu_ptr) 
+PyPDU::PyPDU(Tins::PDU *pdu_ptr, bool owns) 
+: pdu_(pdu_ptr), owns_pdu_(owns)
 { 
     
 }
@@ -105,6 +105,10 @@ const PDU *PyPDU::pdu() const {
     
 PDU *PyPDU::pdu() {
     return pdu_.get();
+}
+
+uint32_t PyPDU::size() const {
+    return pdu_->size();
 }
 
 void PyPDU::set_owns_pdu(bool value) {
@@ -187,13 +191,14 @@ void PyPDU::python_register()
 {
     using namespace boost::python;
     
-    class_<PyPDU, boost::noncopyable>("PDU", no_init)
+    class_<PyPDU>("PDU", no_init)
         .def("serialize", make_getter_wrapper(&PyPDU::serialize))
         .add_property(
             "inner_pdu", 
             make_function(&PyPDU::get_inner_pdu, return_value_policy<manage_new_object>()), 
             &PyPDU::set_inner_pdu
         )
+        .def("size", make_function(&PyPDU::size))
         .def(self /= other<PyPDU>())
         .def("__div__", &PyPDU::operator/, return_value_policy<manage_new_object>())
         .def("find_pdu_by_type", &PyPDU::find_pdu_by_type, return_value_policy<manage_new_object>())

@@ -53,7 +53,7 @@ void PyTCP::python_register() {
         PYTINS_MAKE_ATTR(uint32_t, TCP, ack_seq)
         PYTINS_MAKE_ATTR(uint32_t, TCP, seq)
         PYTINS_MAKE_ATTR(uint16_t, TCP, window)
-        PYTINS_MAKE_ATTR(uint16_t, TCP, check)
+        PYTINS_MAKE_RO_ATTR(uint16_t, TCP, checksum)
         PYTINS_MAKE_ATTR(uint16_t, TCP, urg_ptr)
         PYTINS_MAKE_GETTER_SETTER(uint16_t, TCP, mss)
         PYTINS_MAKE_GETTER_SETTER(uint8_t, TCP, winscale)

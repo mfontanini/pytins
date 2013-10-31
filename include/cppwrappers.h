@@ -336,6 +336,9 @@ make_setter_wrapper(void (Class::*fun)(), Args&&... args) {
 #define PYTINS_MAKE_ATTR(ATTRTYPE, CLASS, NAME) \
     .add_property(#NAME, PYTINS_GETTER_FUN(ATTRTYPE, CLASS, NAME), PYTINS_SETTER_FUN(ATTRTYPE, CLASS, NAME))
 
+#define PYTINS_MAKE_RO_ATTR(ATTRTYPE, CLASS, NAME) \
+    .add_property(#NAME, PYTINS_GETTER_FUN(ATTRTYPE, CLASS, NAME))
+
 #define PYTINS_MAKE_ATTR_POLICY(ATTRTYPE, CLASS, NAME, POLICY) \
     .add_property( \
         #NAME, \

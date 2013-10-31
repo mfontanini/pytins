@@ -33,9 +33,9 @@
 using Tins::EthernetII;
 using Tins::NetworkInterface;
 
-PyEthernetII::PyEthernetII(const NetworkInterface &iface, 
-  const address_type &dst_addr, const address_type &src_addr) 
-: ClonablePyPDU<PyEthernetII>(new EthernetII(iface, dst_addr, src_addr)) 
+PyEthernetII::PyEthernetII(const address_type &dst_addr, 
+const address_type &src_addr) 
+: ClonablePyPDU<PyEthernetII>(new EthernetII(dst_addr, src_addr)) 
 {
     
 }
@@ -50,9 +50,8 @@ void PyEthernetII::python_register() {
     using namespace boost::python;
     
     class_<PyEthernetII, bases<PyPDU> >("EthernetII")
-        .def(init<optional<NetworkInterface, address_type, address_type> >())
+        .def(init<optional<address_type, address_type> >())
         PYTINS_MAKE_ATTR(uint16_t, EthernetII, payload_type)
-        PYTINS_MAKE_ATTR_POLICY(const NetworkInterface&, EthernetII, iface, return_internal_reference<1>())
         PYTINS_MAKE_ATTR2(EthernetII::address_type, const EthernetII::address_type&, EthernetII, src_addr)
         PYTINS_MAKE_ATTR2(EthernetII::address_type, const EthernetII::address_type&, EthernetII, dst_addr)
         .setattr("pdu_type", Tins::PDU::ETHERNET_II)

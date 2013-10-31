@@ -27,37 +27,28 @@
  *
  */
 
-#include <tins/ethernetII.h>
-#include <tins/radiotap.h>
-#include <tins/dot11.h>
-#include <tins/ieee802_3.h>
 #include "pysender.h"
 
 using Tins::NetworkInterface;
-using Tins::EthernetII;
-using Tins::RadioTap;
-using Tins::Dot11;
-using Tins::IEEE802_3;
 
 void PyPacketSender::send(PyPDU *pdu) {
     sender.send(*pdu->pdu());
 }
 
 void PyPacketSender::isend(const NetworkInterface &iface, PyPDU *pdu) {
-    if(EthernetII *actual = dynamic_cast<EthernetII*>(pdu->pdu()))
-        swap_iface_and_send(iface, actual, pdu);
-    /*else if(RadioTap *actual = dynamic_cast<RadioTap>(pdu->pdu()))
-        swap_iface_and_send(iface, actual, pdu);*/
+    sender.send(*pdu->pdu(), iface);
+    /*if(EthernetII *actual = dynamic_cast<EthernetII*>(pdu->pdu()))
+        sender.send(actual, pdu, iface);
     else if(Dot11 *actual = dynamic_cast<Dot11*>(pdu->pdu()))
         swap_iface_and_send(iface, actual, pdu);
-    else if(IEEE802_3 *actual = dynamic_cast<IEEE802_3*>(pdu->pdu()))
-        swap_iface_and_send(iface, actual, pdu);
+    else if(Dot3 *actual = dynamic_cast<Dot3*>(pdu->pdu()))
+        swap_iface_and_send(iface, actual, pdu);*/
 }
 
 void PyPacketSender::python_register() {
     using namespace boost::python;
     
-    class_<PyPacketSender>("PacketSender", init<>())
+    class_<PyPacketSender, boost::noncopyable>("PacketSender", init<>())
         .def("send", &PyPacketSender::send)
         .def("isend", &PyPacketSender::isend)
     ;

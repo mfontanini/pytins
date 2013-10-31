@@ -40,8 +40,7 @@ public:
     typedef Tins::EthernetII::address_type address_type;
     static void python_register();
     
-    PyEthernetII(const Tins::NetworkInterface &iface = Tins::NetworkInterface(), 
-      const address_type &dst_addr = address_type(),
+    PyEthernetII(const address_type &dst_addr = address_type(),
       const address_type &src_addr = address_type());
 
     PyEthernetII(Tins::PDU *pdu);
