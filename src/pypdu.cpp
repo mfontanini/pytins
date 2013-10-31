@@ -37,6 +37,8 @@
 #include "pypdu.h"
 #include "pyarp.h"
 #include "pyipv6.h"
+#include "pydhcp.h"
+#include "pydns.h"
 
 using Tins::PDU;
 
@@ -154,6 +156,10 @@ PyPDU *PyPDU::from_pdu(Tins::PDU *pdu) {
             return new PyRawPDU(pdu);
         case Tins::PDU::IPv6:
             return new PyIPv6(pdu);
+        case Tins::PDU::DHCP:
+            return new PyDHCP(pdu);
+        case Tins::PDU::DNS:
+            return new PyDNS(pdu);
         default:
             return 0;
     };

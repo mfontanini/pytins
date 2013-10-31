@@ -1,7 +1,7 @@
 import tins_core
 from tins_core import NetworkInterface, HWAddress6, IPv4Address, IPv6Address, \
 ICMPFlags, PacketSender, PacketWriter, FileSniffer, Sniffer, LinkType, \
-RawPDU, PDUType, PDUNotFound, NoInnerPDU, DHCP
+RawPDU, PDUType, PDUNotFound, NoInnerPDU, DHCP, DNSQType, DNSQClass
 
 def find_pdu(self, pdu_class):
     return self.find_pdu_by_type(pdu_class.pdu_type)
@@ -49,3 +49,13 @@ class ICMP(tins_core.ICMP):
             self.sequence = sequence
         if gateway != 0:
             self.gateway = gateway
+
+class DNS(tins_core.DNS):
+    def __init__(self, queries = []):
+        tins_core.DNS.__init__(self)
+        for query in queries:
+            self.add_query(query)
+
+class DNSQuery(tins_core.DNSQuery):
+    def __init__(self, dname, qtype = DNSQType.A, qclass = DNSQClass.IN):
+        tins_core.DNSQuery.__init__(self, dname, qtype, qclass)

@@ -47,6 +47,7 @@
 #include "pyarp.h"
 #include "pydhcp.h"
 #include "pyicmp.h"
+#include "pydns.h"
 #include "pyrawpdu.h"
 #include "pysender.h"
 #include "pypacketwriter.h"
@@ -71,8 +72,10 @@ BOOST_PYTHON_MODULE(tins_core)
     PyARP::python_register();
     PyRawPDU::python_register();
     PyDHCP::python_register();
+    PyDNS::python_register();
     PyPacketSender::python_register();
     PyPacketWriter::python_register();
+    
     
     
     class_<PyPacket>("Packet", no_init)

@@ -33,7 +33,6 @@
 #include <boost/python.hpp>
 #include <boost/python/def.hpp>
 #include <boost/python/suite/indexing/vector_indexing_suite.hpp>
-#include <boost/python/suite/indexing/vector_indexing_suite.hpp>
 #include <tins/hw_address.h>
 #include <tins/ip_address.h>
 #include <tins/ipv6_address.h>
