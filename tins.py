@@ -3,10 +3,16 @@ from tins_core import NetworkInterface, HWAddress6, IPv4Address, IPv6Address, \
 ICMPFlags, PacketSender, PacketWriter, FileSniffer, Sniffer, LinkType, \
 RawPDU, PDUType, PDUNotFound, NoInnerPDU, DHCP, DNSQType, DNSQClass
 
-def find_pdu(self, pdu_class):
-    return self.find_pdu_by_type(pdu_class.pdu_type)
+def has_pdu(self, pdu_class):
+    try:
+        self.find_pdu(pdu_class)
+        return True
+    except Exception:
+        return False
 
-tins_core.PDU.find_pdu = find_pdu
+tins_core.PDU.find_pdu = lambda self, pdu_class: self.find_pdu_by_type(pdu_class.pdu_type)
+tins_core.PDU.has_pdu = has_pdu
+tins_core.PDU.__contains__ = has_pdu
 
 class EthernetII(tins_core.EthernetII):
     def __init__(self, iface = NetworkInterface(), dst_addr = HWAddress6(), src_addr = HWAddress6()):
